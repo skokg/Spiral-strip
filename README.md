@@ -2,7 +2,7 @@
 
 --- Description:
 
-The package includes the python code for drawing images of Spiral strip graphics. The graphic consists of color-coded segments arranged in a spiral. The width and length of each individual segment can be different, which can be used to convey additional information. The package includes several graphics examples based on climate, population size, and historical data. 
+The package includes the python code for drawing images of Spiral strip graphics. The graphic consists of color-coded segments arranged in a spiral. The width and length of each individual segment can be different, which can be used to convey additional information. The package includes several graphics examples based on climate, population size, and historical data. For a detailed description of the Spiral Strip graphic please refer to the open access paper listed below in the references section.
 
 --- Usage:
 
@@ -71,5 +71,5 @@ Gregor Skok (Gregor.Skok@fmf.uni-lj.si)
 
 --- References:
 
-Paper that describes the graphic was submitted to a journal and a refernce will be added once it is published.
+Skok G. Spiral Strip. Applied Sciences. 2022; 12(13):6609. https://doi.org/10.3390/app12136609 
 
