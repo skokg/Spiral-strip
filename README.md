@@ -1,5 +1,9 @@
 # The Spiral Strip python package
 
+<p align="center">
+<img src="https://user-images.githubusercontent.com/100854268/177124517-5c479fcd-9904-4ba4-85af-c7a4b28c7503.png" width="350">
+</p>
+
 --- Description:
 
 The package includes the python code for drawing images of Spiral strip graphics. The graphic consists of color-coded segments arranged in a spiral. The width and length of each individual segment can be different, which can be used to convey additional information. The package includes several graphics examples based on climate, population size, and historical data. For a detailed description of the Spiral Strip graphic please refer to the open access paper listed below in the references section.
@@ -63,7 +67,25 @@ The code requires the following python libraries to be installed: numpy and matp
 
 --- Examples:
 
-The code for examples is in the files: example_01_to_04.py, example_05.py, and example_06.py. 
+All the examples, along with the image shown at the top, are taken from the open-access paper listed below in the references section which is available at https://www.mdpi.com/2076-3417/12/13/6609. The paper and the images it contains are published under the CC BY 4.0 license (https://creativecommons.org/licenses/by/4.0/). Please refer to the paper for a more detailed description and discussion of the examples. 
+
+- Examples 1-4 (source code in file example_01_to_04.py) show a hundred years of average yearly 2-m temperatures in Ljubljana, Slovenia, in the period of 1917–2017. The colder years are represented in more bluish colors, and the warmer in more reddish. The time in all strips increases towards the center of the spiral. The title in Example 4 was manually added to the image after it was produced. 
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/100854268/177120401-82a1ee2e-2a0c-46a2-b899-1963f894f9cd.png" width="700">
+</p>
+
+- Example 5 (source code in file example_05.py) shows the increase in world population in the period of 1900–2021. The colors depend on the population size, with the width being proportional to population size. The labels intermittently depict the year and population size, with the years shown in gray, while the population size is colored identically to the polygons. The population size is expressed in billions (e.g., 1.7 B represents 1.7 billion). The title was manually added to the image after it was produced. 
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/100854268/177123296-7aad54ae-7871-48e8-9155-31fd4e946cf7.png" width="350">
+</p>
+
+- Example 6 (source code in file example_06.py) shows the seven deadliest wars in human history. The length of each spiral segment is proportional to the war’s duration, and its area size to its death toll. The death toll is expressed in millions (e.g., 9.9 M represents 9.9 million). The title and labels were manually added to the image after it was produced. 
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/100854268/177123329-d9c259bf-d366-47d2-ba6f-9bfd8d0b3b38.png" width="450">
+</p>
 
 --- Author:
 
