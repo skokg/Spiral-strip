@@ -1,97 +1,126 @@
-# The Spiral Strip python package
+# The Spiral Strip Python package
 
 <p align="center">
-<img src="https://user-images.githubusercontent.com/100854268/177124517-5c479fcd-9904-4ba4-85af-c7a4b28c7503.png" width="350">
+<img src="https://user-images.githubusercontent.com/100854268/177124517-5c479fcd-9904-4ba4-85af-c7a4b28c7503.png" width="350" alt="Spiral Strip graphic">
 </p>
 
---- Description:
+## Description
 
-The package includes the python code for drawing images of Spiral strip graphics. The graphic consists of color-coded segments arranged in a spiral. The width and length of each individual segment can be different, which can be used to convey additional information. The package includes several graphics examples based on climate, population size, and historical data. For a detailed description of the Spiral Strip graphic please refer to the open access paper listed below in the references section.
+The package includes Python code for drawing Spiral Strip graphics. The graphic consists of color-coded segments arranged in a spiral. The width and length of each segment can vary to convey additional information. The package includes examples based on climate, population size, and historical data. For a detailed description of the visualization methodology, please refer to the open-access paper listed in the References section.
 
---- Usage:
+## Usage
 
-function draw_spiral_strip(image_filename, r0, space, fi0_deg, number_of_segments, width, segment_length, maximum_length_of_subsegment, segment_color, values, colormap_name, segment_edge_linecolor, segment_edge_linewidth, labels1_text, labels1_fontsize, labels1_color, labels1_pad, antialiased, gap_between_consecutive_segments, dpi)
+Download `spiralstrip.py` from the [Spiral-strip GitHub repository](https://github.com/skokg/Spiral-strip), then place it beside your script or in a directory on Python's import path.
 
---- Function arguments:
+Use `draw_spiral_strip` to create a separate graphic, display it, and optionally save it to a file:
 
-Please look at the paper mentioned in the references section for a more detailed explanation of some of the arguments.
+```python
+from spiralstrip import draw_spiral_strip
 
-- image_filename - string. The filename (optionally also including the path) of the image to be created (it can be a vector (e.g., pdf, eps) or raster format (e.g., png, gif, jpg)). 
+# Display a graphic.
+draw_spiral_strip(number_of_segments=4, values=[1, 2, 3, 4], segment_color="by_values_and_colormap")
 
-- number_of_segments - int. The number of segments.
+# Save a PNG and display the graphic.
+draw_spiral_strip("spiral.png", number_of_segments=4, values=[1, 2, 3, 4], segment_color="by_values_and_colormap", dpi=500)
 
-- width - float or list of floats (default width = 10). The widths of all segments
+# Save an SVG without displaying it.
+draw_spiral_strip("spiral.svg", number_of_segments=4, show=False)
+```
 
-- segment_length - float or list of floats (dafault segment_length = 40). The leangth of all segments
+Use `plot_spiral_strip` to draw into an existing Matplotlib axes. This interface allows you to add your own titles and other elements, and combine multiple Spiral Strip graphics using subplots or subfigures:
 
-- r0 - float (default = 10). The approximate distance of the first element from the center of the coordinate system
+```python
+import matplotlib.pyplot as plt
+from spiralstrip import plot_spiral_strip
 
-- space - float (default = 15). The space (the width of the gap region) between the segments in two consequent loops.
+fig, ax = plt.subplots(figsize=(5, 5), dpi=150)
+strip = plot_spiral_strip(ax, number_of_segments=4, values=[1, 2, 3, 4], segment_color="by_values_and_colormap")
+ax.set_title("My spiral strip")
+fig.canvas.draw()
+strip.fit()
+fig.savefig("spiral.pdf", bbox_inches="tight", pad_inches=0.02)
+plt.show()
+plt.close(fig)
+```
 
-- fi0_deg - float (default = 45). The angle, in degrees, between the x-axis and line that links the center of the coordinate system and the spiral starting point. 
+The plot interface accepts the geometry and appearance arguments described below, but uses an `ax` argument instead of `image_filename`, `dpi`, `show`, and `transparent`. Your script controls saving and display. For a transparent export, use `fig.savefig(..., transparent=True)`. Use unshared, linear, rectilinear axes; after changing the layout or strip labels, draw the canvas and call `strip.fit()` before saving. A combined 2×2 example is included in `example_01_to_04.py`.
 
-- segment_color - matplotlib color or list of matplotlib colors (default = "random"). The colors of segment polygons. The color can be specified as a string or other color format recognized by matplotlib  (e.g., RGB tuple, named colors, hex string). There a two custom options defined. If segment_color="random", then the segment colors are randomly generated. If segment_color="by_values_and_colormap" then the colors are determined via the value and colormap_name arguments. 
+## Function arguments
 
-- values - list of floats or None (default = None). The numerical values are related to the segments. They are used to determine the color with the help of colormap prescribed by the colormap_name. The smallest value in the list will be assigned the first color in the colormap, while the largest value will be the last color. 
+Please refer to the paper for a more detailed explanation of the spiral geometry. Defaults below apply to `draw_spiral_strip`; the plot interface shares the geometry and appearance defaults. Supply a positive `number_of_segments`. Per-segment lists must contain exactly one entry per segment, and numerical inputs must be finite.
 
-- colormap_name - string (default = "coolwarm"). The name of the matplotlib's colormap to be used to determine the colors of segments.
+- `image_filename` — String or path (default `False`). The filename, optionally including a path, of the image to save. The extension selects a format supported by Matplotlib, such as PNG, SVG, PDF, EPS, or JPEG. `False` disables saving.
+- `show` — Boolean (default `True`). Display the graphic. At least saving or display must be enabled. Display requires a suitable Matplotlib backend; use `show=False` on a server without a display.
+- `number_of_segments` — Integer (default `0`). The number of segments; must be supplied as a positive integer.
+- `width` — Number or list of numbers (default `20`). Positive segment widths. One number applies to every segment; a list sets each width individually.
+- `segment_length` — Number or list of numbers (default `40`). Positive segment centerline lengths. One number applies to every segment.
+- `r0` — Number (default `10`). The approximate distance of the first segment from the center of the coordinate system; must be nonnegative.
+- `space` — Number (default `15`). The spacing between segments in consecutive spiral loops; must be nonnegative.
+- `fi0_deg` — Number (default `45`). The angle, in degrees, between the x-axis and the line connecting the spiral center to its starting point.
+- `segment_color` — Matplotlib color or list of colors (default `"random"`). Colors may be named colors, hex strings, RGB/RGBA tuples, or other Matplotlib color formats. `"random"` generates softened random colors. `"by_values_and_colormap"` assigns colors using `values` and `colormap_name`.
+- `values` — List of numbers or `None` (default `None`). One value per segment, required for value-based coloring. The minimum and maximum map to the first and last colormap colors; constant data use the midpoint color.
+- `colormap_name` — String (default `"coolwarm"`). The Matplotlib colormap used for value-based segment colors.
+- `labels1_text` — List of labels or `None` (default `None`). One label per segment. An empty string hides an individual label; `None` hides all labels.
+- `labels1_fontsize` — Number or list of numbers (default `4`). Positive segment label font sizes in points.
+- `labels1_color` — Matplotlib color or list of colors (default `"same_as_segment"`). `"same_as_segment"` matches each segment's fill color; `"random"` generates random label colors. A list may mix fixed colors and `"same_as_segment"` entries.
+- `labels1_pad` — Number (default `3`). Nonnegative outward distance from a segment boundary to its label center, in plot coordinates.
+- `gap_between_consecutive_segments` — Number or list of numbers (default `0`). Nonnegative gaps along the centerline after each segment. One number applies to every segment; the final gap has no visible effect.
+- `maximum_length_of_subsegment` — Number (default `10`). Positive nominal sampling step limit. Smaller values improve the smoothness of straight polygon boundaries and the default length approximation. When both `accurate_lengths` and `curved_boundaries` are enabled, adaptive refinement replaces these steps.
+- `segment_edge_linewidth` — Number (default `0.3`). Nonnegative segment outline width in points. Set it to `0` to disable outlines.
+- `segment_edge_linecolor` — Matplotlib color or list of colors (default `"same_as_segment"`). Outline colors. A list may mix fixed colors and `"same_as_segment"` entries; `"none"` makes outlines transparent.
+- `dpi` — Number (default `300`). Positive export resolution for raster images. Matplotlib's `figure.dpi` controls display resolution separately.
+- `antialiased` — Boolean (default `True`). Enable antialiasing when rendering segment polygons.
+- `accurate_lengths` — Boolean (default `False`). Numerically solve centerline arc lengths for more accurate segment lengths, gaps, and label placement.
+- `curved_boundaries` — Boolean (default `False`). Use adaptive curved segment boundaries instead of straight lines between sampled points.
+- `curve_tolerance` — Number (default `0.01`). Positive boundary approximation tolerance in plot coordinates when curved boundaries are enabled. Smaller values generally require more curves.
+- `curved_labels` — Boolean (default `False`, experimental). Make segment labels follow the segment curvature. Supports single-line Latin, Greek, Cyrillic, and common symbols without combining marks. These labels export as curves; long labels may overlap neighboring labels.
+- `title` — String or `None` (default `None`). Optional title above the graphic. Blank text omits the title; multiline titles are supported.
+- `title_fontsize` — Number (default `12`). Positive title font size in points.
+- `title_color` — Matplotlib color (default `"black"`). Title color.
+- `title_pad` — Number (default `8`). Nonnegative spacing in points between the artwork, including its labels, and the title.
+- `title_bold` — Boolean (default `False`). Use a bold title.
+- `show_colorbar` — Boolean (default `False`). Add a horizontal colorbar below the graphic. Requires value-based segment coloring. Only the minimum and maximum values are labeled; constant data show one centered value.
+- `colorbar_suffix` — String (default `""`). Optional units appended to the colorbar values, for example `"°C"`.
+- `colorbar_width_percent` — Number (default `60`). Colorbar width as a percentage of the graphic width, including the title and segment labels. Must be greater than `0` and at most `100`.
+- `colorbar_fontsize` — Number (default `6`). Positive colorbar label font size in points.
+- `colorbar_labelcolor` — Matplotlib color (default `"#6b7280"`). Colorbar label color, gray by default.
+- `transparent` — Boolean (default `False`). Remove the figure and axes backgrounds for display and saving. Use a format that supports transparency, such as PNG, SVG, or PDF.
 
-- labels1_text - None or list of strings (default = None). The text for labels of segments. If the string for some label is "", then no label is displayed. 
+Additional arguments for `plot_spiral_strip`:
 
-- labels1_fontsize - float or list of floats (default = 4). The font size of text for the labels of segments.
+- `ax` — The existing Matplotlib axes to draw into, supplied as the first argument.
+- `fit` — Boolean (default `True`). Automatically fit the axes to the complete graphic, including labels, title, and colorbar.
 
-- labels1_color - matplotlib color or list of matplotlib colors  (default = "same_as_segment"). The color of text for the labels of segments. There a two custom options defined. If labels1_color="random", then the colors are randomly generated. If labels1_color="same_as_segment" then the colors are identical to the colors of the corresponding segment polygons. 
+Detailed restrictions are documented in the function docstrings.
 
-- labels1_pad - float (default = 3). The width of space between the segment polygon and the corresponding label. 
+## Return value
 
-- gap_between_consecutive_segments - float or list of floats (default = 0). The gap size between consequitive segments. 
+`draw_spiral_strip` returns `None`. It saves and/or displays the graphic, then closes the figure. When saving a file, it prints the filename.
 
-- maximum_length_of_subsegment - float (default = 10). The maximum length of stepsize when the polygons are drawn. Typically the value of 10 is OK, but if the borders of the segment's polygons do not look smooth, the value can be reduced to improve the appearance. 
+`plot_spiral_strip` returns a `SpiralStripPlot` object. Its artists are accessible through `strip.segments` and `strip.labels`. Use `strip.fit()` to update the framing, or `strip.remove()` to remove the strip. The caller manages the figure.
 
-- segment_edge_linewidth - float (default = 0.3). The linewidth of the outlines of the segment polygon. Setting segment_edge_linewidth=0, might cause white lines to appear between consequitive segments. 
+## Required Python libraries
 
-- segment_edge_linecolor - matplotlib color or list of matplotlib colors  (default = "same_as_segment"). The color of the outlines of the segment polygons. There is a  custom option defined. If segment_edge_linecolor="same_as_segment" then the colors are identical to the fill colors of the corresponding segment polygons.  
+The code requires NumPy and Matplotlib.
 
-- dpi - float (default = 300). This argument only affects the raster images. Increasing the dpi value will increase the resolution of generated raster images.
+## Examples
 
-- antialiased - True or False (default = True). This argument only affects the raster images. If set to true, antialiasing will be used when converting the segment polygons to a raster format, thereby improving their appearance. 
+The examples are based on the open-access paper listed in the References section. Please refer to the paper for a detailed description and discussion of the examples. The current example scripts also include titles and other options added to the library since publication.
 
+- **Examples 1–4** (source code in [example_01_to_04.py](example_01_to_04.py)) show average yearly 2-m temperatures in Ljubljana, Slovenia, during 1917–2017. Colder years appear in bluish colors and warmer years in reddish colors. Time increases toward the center of the spiral. The file includes separate graphics using `draw_spiral_strip` and `plot_spiral_strip`, plus a combined 2×2 Matplotlib figure using `plot_spiral_strip`.
 
---- Return value:
+- **Example 5** (source code in [example_05.py](example_05.py)) shows world population during 1900–2021. Segment colors depend on population size, and widths are proportional to population size. Labels alternate between the year and population size. Years appear in gray; population labels match the segment colors. Population is expressed in billions (for example, 1.7 B means 1.7 billion). This example uses `draw_spiral_strip`.
 
-No return value. If there are no errors, the function will create a file specified with the image_filename argument.
+- **Example 6** (source code in [example_06.py](example_06.py)) shows seven historical wars using the estimates in the example dataset. Segment lengths are proportional to duration, and segment areas represent estimated deaths. This example uses `draw_spiral_strip` and displays the segments without labels.
 
---- Required python libraries:
-
-The code requires the following python libraries to be installed: numpy and matplotlib.
-
---- Examples:
-
-All the examples, along with the image shown at the top, are taken from the open-access paper listed below in the references section which is available at https://www.mdpi.com/2076-3417/12/13/6609. The paper and the images it contains are published under the CC BY 4.0 license (https://creativecommons.org/licenses/by/4.0/). Please refer to the paper for a more detailed description and discussion of the examples. 
-
-- Examples 1-4 (source code in file example_01_to_04.py) show a hundred years of average yearly 2-m temperatures in Ljubljana, Slovenia, in the period of 1917–2017. The colder years are represented in more bluish colors, and the warmer in more reddish. The time in all strips increases towards the center of the spiral. The title in Example 4 was manually added to the image after it was produced. 
-
-<p align="center">
-<img src="https://user-images.githubusercontent.com/100854268/177120401-82a1ee2e-2a0c-46a2-b899-1963f894f9cd.png" width="700">
-</p>
-
-- Example 5 (source code in file example_05.py) shows the increase in world population in the period of 1900–2021. The colors depend on the population size, with the width being proportional to population size. The labels intermittently depict the year and population size, with the years shown in gray, while the population size is colored identically to the polygons. The population size is expressed in billions (e.g., 1.7 B represents 1.7 billion). The title was manually added to the image after it was produced. 
-
-<p align="center">
-<img src="https://user-images.githubusercontent.com/100854268/177123296-7aad54ae-7871-48e8-9155-31fd4e946cf7.png" width="350">
-</p>
-
-- Example 6 (source code in file example_06.py) shows the seven deadliest wars in human history. The length of each spiral segment is proportional to the war’s duration, and its area size to its death toll. The death toll is expressed in millions (e.g., 9.9 M represents 9.9 million). The title and labels were manually added to the image after it was produced. 
-
-<p align="center">
-<img src="https://user-images.githubusercontent.com/100854268/177123329-d9c259bf-d366-47d2-ba6f-9bfd8d0b3b38.png" width="450">
-</p>
-
---- Author:
+## Author
 
 Gregor Skok (Gregor.Skok@fmf.uni-lj.si)
 
---- References:
+## References
 
-Skok G. Spiral Strip. Applied Sciences. 2022; 12(13):6609. https://doi.org/10.3390/app12136609 
+Skok G. Spiral Strip. *Applied Sciences*. 2022; 12(13):6609. [https://doi.org/10.3390/app12136609](https://doi.org/10.3390/app12136609)
 
+## License
+
+The Python code's license is provided in [LICENSE](LICENSE).

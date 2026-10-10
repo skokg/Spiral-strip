@@ -1,6 +1,8 @@
 
-# import Spiral strip functions from the library file
-from spiral_strip_library_v04 import *
+# Import the plotting function and the dependencies used by this example.
+import numpy as np
+import matplotlib.pyplot as plt
+from spiralstrip import draw_spiral_strip
 
 # -----------------------------------
 # Example 5: World population growth
@@ -16,7 +18,7 @@ population = 1.67275 -0.00114*y + 0.00181*pow(y,2) -8.14647E-5*pow(y,3) + 1.6800
 width=population/np.amax(population)*60
 
 population_normalized = (population - np.min(population))/np.ptp(population)
-cmap = matplotlib.cm.get_cmap("coolwarm")
+cmap = plt.get_cmap("coolwarm")
 segment_color=[]
 labels_str = []
 labels1_color = []
@@ -36,5 +38,6 @@ for il in range(len(year)):
 		labels1_color.append("#A9ABAE")
 		labels1_fontsize.append(4)
 
-draw_spiral_strip(image_filename="example05.pdf", r0=10, space=0, fi0_deg=45, number_of_segments = len(population), width=width, segment_length=4.5, maximum_length_of_subsegment=10, segment_color=segment_color, values=population, colormap_name='coolwarm', labels1_text=labels_str, labels1_fontsize=labels1_fontsize, labels1_color=labels1_color, labels1_pad=3, dpi=300)
+# - Uses draw_spiral_strip, which creates its own figure and displays the graphic without saving a file.
+draw_spiral_strip(image_filename=False, show=True, title="World population", title_color="#9ca3af", segment_edge_linewidth=0, r0=10, space=0, fi0_deg=45, number_of_segments = len(population), width=width, segment_length=4.5, maximum_length_of_subsegment=10, segment_color=segment_color, values=population, colormap_name='coolwarm', labels1_text=labels_str, labels1_fontsize=labels1_fontsize, labels1_color=labels1_color, labels1_pad=3, dpi=300)
 

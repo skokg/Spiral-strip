@@ -1,6 +1,6 @@
 
-# import Spiral strip functions from the library file
-from spiral_strip_library_v04 import *
+# Import the standalone plotting function.
+from spiralstrip import draw_spiral_strip
 
 # -----------------------------------
 # Example 6: Deadliest wars
@@ -35,5 +35,6 @@ for il in range(len(duration)):
 	segment_length.append(duration[il]*35)
 	width.append(deaths[il]*10/duration[il])
 
-draw_spiral_strip(image_filename="example06.pdf", r0=10, space=0, fi0_deg=0, number_of_segments = len(duration), width=width, segment_length=segment_length, maximum_length_of_subsegment=10, segment_color = segment_color, values=None, colormap_name=None, labels1_text=None, labels1_fontsize=6, labels1_color="dimgray", labels1_pad=10, antialiased = True, gap_between_consecutive_segments = 20, dpi=300)
+# - Uses draw_spiral_strip, which creates its own figure and displays the graphic without saving a file.
+draw_spiral_strip(image_filename=False, show=True, title="Deadliest wars", title_color="#9ca3af", segment_edge_linewidth=0, r0=10, space=0, fi0_deg=0, number_of_segments = len(duration), width=width, segment_length=segment_length, maximum_length_of_subsegment=10, segment_color = segment_color, values=None, colormap_name=None, labels1_text=None, labels1_fontsize=6, labels1_color="dimgray", labels1_pad=10, antialiased = True, gap_between_consecutive_segments = 20, dpi=300)
 
