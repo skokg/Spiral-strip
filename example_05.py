@@ -39,5 +39,5 @@ for il in range(len(year)):
 		labels1_fontsize.append(4)
 
 # - Uses draw_spiral_strip, which creates its own figure and displays the graphic without saving a file.
-draw_spiral_strip(image_filename=False, show=True, title="World population", title_color="#9ca3af", segment_edge_linewidth=0, r0=10, space=0, fi0_deg=45, number_of_segments = len(population), width=width, segment_length=4.5, maximum_length_of_subsegment=10, segment_color=segment_color, values=population, colormap_name='coolwarm', labels1_text=labels_str, labels1_fontsize=labels1_fontsize, labels1_color=labels1_color, labels1_pad=3, dpi=300)
+draw_spiral_strip(image_filename=False, show=True, title="World population", title_color="#9ca3af", segment_edge_linewidth=0, r0=10, space=0, fi0_deg=45, number_of_segments = len(population), width=width, segment_length=4.5, segment_color=segment_color, values=population, colormap_name='coolwarm', labels1_text=labels_str, labels1_fontsize=labels1_fontsize, labels1_color=labels1_color, labels1_pad=3, dpi=300)
 

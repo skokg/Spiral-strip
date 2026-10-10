@@ -65,14 +65,12 @@ Please refer to the paper for a more detailed explanation of the spiral geometry
 - `labels1_color` — Matplotlib color or list of colors (default `"same_as_segment"`). `"same_as_segment"` matches each segment's fill color; `"random"` generates random label colors. A list may mix fixed colors and `"same_as_segment"` entries.
 - `labels1_pad` — Number (default `3`). Nonnegative outward distance from a segment boundary to its label center, in plot coordinates.
 - `gap_between_consecutive_segments` — Number or list of numbers (default `0`). Nonnegative gaps along the centerline after each segment. One number applies to every segment; the final gap has no visible effect.
-- `maximum_length_of_subsegment` — Number (default `10`). Positive nominal sampling step limit. Smaller values improve the smoothness of straight polygon boundaries and the default length approximation. When both `accurate_lengths` and `curved_boundaries` are enabled, adaptive refinement replaces these steps.
 - `segment_edge_linewidth` — Number (default `0.3`). Nonnegative segment outline width in points. Set it to `0` to disable outlines.
 - `segment_edge_linecolor` — Matplotlib color or list of colors (default `"same_as_segment"`). Outline colors. A list may mix fixed colors and `"same_as_segment"` entries; `"none"` makes outlines transparent.
 - `dpi` — Number (default `300`). Positive export resolution for raster images. Matplotlib's `figure.dpi` controls display resolution separately.
 - `antialiased` — Boolean (default `True`). Enable antialiasing when rendering segment polygons.
-- `accurate_lengths` — Boolean (default `False`). Numerically solve centerline arc lengths for more accurate segment lengths, gaps, and label placement.
-- `curved_boundaries` — Boolean (default `False`). Use adaptive curved segment boundaries instead of straight lines between sampled points.
-- `curve_tolerance` — Number (default `0.01`). Positive boundary approximation tolerance in plot coordinates when curved boundaries are enabled. Smaller values generally require more curves.
+- `curved_boundaries` — Boolean (default `True`). Use adaptive cubic Bézier boundaries; set `False` for adaptively subdivided straight edges. Both modes use accurate centerline lengths and `curve_tolerance` to determine boundary detail automatically.
+- `curve_tolerance` — Number (default `0.01`). Positive boundary approximation tolerance in plot coordinates for both straight and curved boundaries. Smaller values generally require more edges or curves.
 - `curved_labels` — Boolean (default `False`, experimental). Make segment labels follow the segment curvature. Supports single-line Latin, Greek, Cyrillic, and common symbols without combining marks. These labels export as curves; long labels may overlap neighboring labels.
 - `title` — String or `None` (default `None`). Optional title above the graphic. Blank text omits the title; multiline titles are supported.
 - `title_fontsize` — Number (default `12`). Positive title font size in points.
@@ -107,11 +105,11 @@ The code requires NumPy and Matplotlib.
 
 The examples are based on the open-access paper listed in the References section. Please refer to the paper for a detailed description and discussion of the examples. The current example scripts also include titles and other options added to the library since publication.
 
-- **Examples 1–4** (source code in [example_01_to_04.py](example_01_to_04.py)) show average yearly 2-m temperatures in Ljubljana, Slovenia, during 1917–2017. Colder years appear in bluish colors and warmer years in reddish colors. Time increases toward the center of the spiral. The file includes separate graphics using `draw_spiral_strip` and `plot_spiral_strip`, plus a combined 2×2 Matplotlib figure using `plot_spiral_strip`.
+- **Examples 1–4** (source code in [example_01_to_04.py](https://github.com/skokg/Spiral-strip/blob/v2.0/example_01_to_04.py)) show average yearly 2-m temperatures in Ljubljana, Slovenia, during 1917–2017. Colder years appear in bluish colors and warmer years in reddish colors. Time increases toward the center of the spiral. The file includes separate graphics using `draw_spiral_strip` and `plot_spiral_strip`, plus a combined 2×2 Matplotlib figure using `plot_spiral_strip`.
 
-- **Example 5** (source code in [example_05.py](example_05.py)) shows world population during 1900–2021. Segment colors depend on population size, and widths are proportional to population size. Labels alternate between the year and population size. Years appear in gray; population labels match the segment colors. Population is expressed in billions (for example, 1.7 B means 1.7 billion). This example uses `draw_spiral_strip`.
+- **Example 5** (source code in [example_05.py](https://github.com/skokg/Spiral-strip/blob/v2.0/example_05.py)) shows world population during 1900–2021. Segment colors depend on population size, and widths are proportional to population size. Labels alternate between the year and population size. Years appear in gray; population labels match the segment colors. Population is expressed in billions (for example, 1.7 B means 1.7 billion). This example uses `draw_spiral_strip`.
 
-- **Example 6** (source code in [example_06.py](example_06.py)) shows seven historical wars using the estimates in the example dataset. Segment lengths are proportional to duration, and segment areas represent estimated deaths. This example uses `draw_spiral_strip` and displays the segments without labels.
+- **Example 6** (source code in [example_06.py](https://github.com/skokg/Spiral-strip/blob/v2.0/example_06.py)) shows seven historical wars using the estimates in the example dataset. Segment lengths are proportional to duration, and segment areas represent estimated deaths. This example uses `draw_spiral_strip` and displays the segments without labels.
 
 ## Author
 
@@ -123,4 +121,4 @@ Skok G. Spiral Strip. *Applied Sciences*. 2022; 12(13):6609. [https://doi.org/10
 
 ## License
 
-The Python code's license is provided in [LICENSE](LICENSE).
+The Python code's license is provided in [LICENSE](https://github.com/skokg/Spiral-strip/blob/v2.0/LICENSE).

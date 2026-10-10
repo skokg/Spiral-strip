@@ -11,12 +11,12 @@ maximum segment width determines the centerline for every segment.
 Lengths, widths, radii, and padding use plot coordinates. Font sizes and
 outline widths use typographic points. Internal angles use radians.
 
-The default method approximates arc length with first-order angular steps.
-accurate_lengths=True inverts the analytic arc-length equation numerically.
-By default, both methods approximate the boundaries with straight polygon
-edges. Neither checks turn overlaps, offset folds, or label collisions.
-curved_boundaries=True instead approximates the offset boundaries with
-adaptive cubic Bezier curves, controlled by curve_tolerance in plot units.
+Segment lengths and gaps use the analytic arc-length equation, inverted
+numerically with safeguarded Newton iterations (relative target 1e-10).
+The default boundaries are adaptive cubic Bezier curves. Set
+curved_boundaries=False for adaptively refined straight polygon edges.
+Both modes use curve_tolerance in plot units and exact arc-length midpoints
+for labels. Neither checks turn overlaps, offset folds, or label collisions.
 
 draw_spiral_strip creates, optionally saves/displays, and closes one figure.
 plot_spiral_strip draws into caller-owned axes and returns SpiralStripPlot.
@@ -80,7 +80,7 @@ class _SegmentColors(_NamedTuple):
 
 
 class _SegmentPath(_NamedTuple):
-    """Centerline positions/normals and optional start/midpoint/end angles."""
+    """Centerline positions/normals and their optional sampling angles."""
 
     positions: np.ndarray
     normals: np.ndarray
@@ -316,23 +316,6 @@ def _validate_backbone(widths, r0, space):
     return maximum_width
 
 
-def _advance_angle(angle, distance, backbone_width, r0, space):
-    """Apply the legacy first-order step, requiring representable progress."""
-    if distance == 0:
-        return angle
-    with np.errstate(over="ignore", under="ignore", invalid="ignore", divide="ignore"):
-        speed = _require_geometry(
-            dldfi_fi(angle, backbone_width, r0, space),
-            "centerline speed", positive=True,
-        )
-        next_angle = angle + distance / speed
-    _require_geometry(next_angle, "angle")
-    if next_angle <= angle:
-        raise ValueError(
-            "Requested length or gap is too small for representable "
-            "angular progress"
-        )
-    return next_angle
 
 
 def _prepare_segment_inputs(
@@ -388,31 +371,6 @@ def _prepare_segment_inputs(
     return _SegmentInputs(widths, lengths, font_sizes, gaps, label_texts, values)
 
 
-def _substep_counts(lengths, maximum_step_length):
-    """Choose even step counts and enforce the total path-point limit."""
-    counts = []
-    total_path_points = 0
-    for length in lengths:
-        with np.errstate(over="ignore", under="ignore"):
-            ratio = length / maximum_step_length
-        if not np.isfinite(ratio) or ratio > _MAX_PATH_POINTS:
-            raise ValueError(
-                "Requested geometry exceeds the 1,000,000 path-point limit; "
-                "increase maximum_length_of_subsegment"
-            )
-
-        steps = max(2, int(np.ceil(ratio)))
-        # An even count includes a centerline sample at the nominal half length.
-        steps += steps % 2
-        total_path_points += steps + 1
-        if total_path_points > _MAX_PATH_POINTS:
-            raise ValueError(
-                "Requested geometry exceeds the 1,000,000 path-point limit; "
-                "increase maximum_length_of_subsegment or reduce the "
-                "number of segments"
-            )
-        counts.append(steps)
-    return counts
 
 
 def _segment_colors(value, name, count, matching_colors=None):
@@ -524,7 +482,6 @@ def dldfi_fi(fi, width, r0, space):
     """Return ds/d(fi), the centerline arc length per radian.
 
     For r(fi) = start_radius + pitch * fi, ds/d(fi) = hypot(r(fi), pitch).
-    The legacy public function and argument names are retained for callers.
     """
     radius = r_fi(fi, width, r0, space)
     pitch = _spiral_pitch(width, space)
@@ -680,101 +637,47 @@ def _sample_point(angle, backbone_width, r0, space, rotation):
     return radius, position, normal
 
 
-def _sample_segment(
-    start_angle, length, steps, backbone_width, r0, space, rotation,
-    accurate_lengths, curved_boundaries=False, retain_angles=False,
-):
-    """Return positions/normals, the end angle, and maximum radius.
+def _sample_segment(start_angle, length, backbone_width, r0, space, rotation):
+    """Solve exact start, arc-length midpoint, and end anchors for a segment.
 
-    Curved mode retains only its three anchors; legacy integration still
-    evaluates every fixed substep to preserve the original placements.
+    Boundary builders refine the angular intervals adaptively to meet the
+    requested boundary tolerance.
     """
-    angle = start_angle
-    if accurate_lengths:
-        distances = np.linspace(0, length, steps + 1)
-        sample_angles = _angles_at_arc_lengths(
-            start_angle, distances, backbone_width, r0, space
-        )
-        if np.any(np.diff(sample_angles) <= 0):
-            raise ValueError(
-                "Requested sampling intervals cannot produce distinct angles"
-            )
-
-    nominal_step_length = length / steps
-    _require_geometry(nominal_step_length, "sampling step length", positive=True)
-    positions = []
-    normals = []
-    retained_angles = []
-    previous_position = None
+    sample_angles = _angles_at_arc_lengths(
+        start_angle, [0, length / 2, length], backbone_width, r0, space
+    )
+    if np.any(np.diff(sample_angles) <= 0):
+        raise ValueError("Segment anchors cannot produce distinct angles")
+    positions, normals = [], []
     maximum_radius = 0
-    for sample_index in range(steps + 1):
-        if accurate_lengths:
-            angle = sample_angles[sample_index]
+    for angle in sample_angles:
         radius, position, normal = _sample_point(
             angle, backbone_width, r0, space, rotation
         )
+        if positions and np.array_equal(position, positions[-1]):
+            raise ValueError("Segment anchors cannot produce distinct centerline positions")
+        positions.append(position)
+        normals.append(normal)
         maximum_radius = np.maximum(maximum_radius, radius)
-        if previous_position is not None and np.array_equal(
-            position, previous_position
-        ):
-            raise ValueError(
-                "Requested sampling intervals cannot produce distinct "
-                "centerline positions"
-            )
-        previous_position = position
-        if not curved_boundaries or sample_index in (0, steps // 2, steps):
-            positions.append(position)
-            normals.append(normal)
-            if curved_boundaries or retain_angles:
-                retained_angles.append(angle)
-
-        if not accurate_lengths and sample_index != steps:
-            # First-order approximation: ds = speed(angle) * d(angle).
-            angle = _advance_angle(
-                angle, nominal_step_length, backbone_width, r0, space
-            )
-
-    path = _SegmentPath(
-        np.asarray(positions), np.asarray(normals),
-        np.asarray(retained_angles) if curved_boundaries or retain_angles else None,
-    )
-    return path, angle, maximum_radius
+    return _SegmentPath(np.asarray(positions), np.asarray(normals), sample_angles), sample_angles[-1], maximum_radius
 
 
-def _build_paths(
-    inputs, step_counts, backbone_width, r0, space, rotation, accurate_lengths,
-    curved_boundaries=False, curved_labels=False,
-):
-    """Place segments consecutively along the spiral, skipping their gaps."""
-    paths = []
-    angle = 0
-    maximum_radius = 0
-    for segment_index, steps in enumerate(step_counts):
+def _build_paths(inputs, backbone_width, r0, space, rotation):
+    """Place segments and gaps using the analytic arc-length inverse."""
+    paths, angle, maximum_radius = [], 0, 0
+    for segment_index, length in enumerate(inputs.lengths):
         try:
             path, angle, segment_radius = _sample_segment(
-                angle, inputs.lengths[segment_index], steps, backbone_width,
-                r0, space, rotation, accurate_lengths, curved_boundaries,
-                retain_angles=curved_labels,
+                angle, length, backbone_width, r0, space, rotation
             )
+            paths.append(path)
+            maximum_radius = np.maximum(maximum_radius, segment_radius)
+            gap = inputs.gaps[segment_index]
+            # A final gap has no following segment and no visible effect.
+            if segment_index + 1 < len(inputs.lengths) and gap > 0:
+                angle = _angles_at_arc_lengths(angle, [gap], backbone_width, r0, space)[0]
         except ValueError as error:
-            raise ValueError(
-                f"Invalid geometry for segment {segment_index + 1}: {error}"
-            ) from error
-        maximum_radius = np.maximum(maximum_radius, segment_radius)
-        paths.append(path)
-
-        gap = inputs.gaps[segment_index]
-        # A final gap has no following segment and no visible effect.
-        if segment_index + 1 == len(step_counts):
-            continue
-        if accurate_lengths:
-            if gap > 0:
-                angle = _angles_at_arc_lengths(
-                    angle, [gap], backbone_width, r0, space
-                )[0]
-        else:
-            angle = _advance_angle(angle, gap, backbone_width, r0, space)
-
+            raise ValueError(f"Invalid geometry for segment {segment_index + 1}: {error}") from error
     return paths, maximum_radius
 
 
@@ -855,6 +758,80 @@ def _boundary_controls(start, end, angle_span):
             end.positions,
         ], axis=1)
     return _require_geometry(controls, "Bezier control points")
+
+
+def _build_straight_polygon(
+    path, width, text, label_color, font_size, label_padding,
+    backbone_width, r0, space, rotation, tolerance, vertex_budget,
+):
+    """Refine straight chords without changing exact anchors or label placement.
+
+    Keep the three exact anchors and split intervals until both normal-offset
+    boundaries follow their chords within the estimated tolerance. Three
+    interior probes and an angular cap avoid missing curvature or whole turns.
+    The estimate is not a rigorous global error bound.
+    """
+    anchors = path.angles
+    maximum_intervals = (vertex_budget - 3) // 2
+    if len(anchors) - 1 > maximum_intervals:
+        raise ValueError("Straight geometry exceeds the 1,000,000-vertex limit")
+    original = _build_polygon(
+        path, width, text, label_color, font_size, label_padding
+    )
+    count = len(anchors)
+    # Reuse the original offsets so joins and end caps remain bit-identical.
+    anchor_positions = np.stack([
+        original.vertices[:count], original.vertices[count:2 * count][::-1]
+    ], axis=1)
+    pending = [
+        (anchors[i], anchors[i + 1], anchor_positions[i], anchor_positions[i + 1], 0)
+        for i in range(count - 2, -1, -1)
+    ]
+    accepted = [anchor_positions[0]]
+    fractions = np.array([0.25, 0.5, 0.75])
+    while pending:
+        start_angle, end_angle, start, end, depth = pending.pop()
+        span = end_angle - start_angle
+        midpoint = start_angle + span / 2
+        midpoint_positions = None
+        if span <= _MAX_CURVE_ANGLE:
+            probe_angles = start_angle + span * fractions
+            if np.any(np.diff(np.r_[start_angle, probe_angles, end_angle]) <= 0):
+                raise ValueError("Straight boundary probes cannot be resolved at this angle")
+            samples = np.array([
+                _boundary_sample(angle, width, backbone_width, r0, space, rotation).positions
+                for angle in probe_angles
+            ])
+            with np.errstate(over="ignore", invalid="ignore"):
+                errors = (samples - start) - fractions[:, None, None] * (end - start)
+                distances = np.hypot(errors[:, :, 0], errors[:, :, 1])
+            _require_geometry(distances, "straight boundary approximation error")
+            if np.max(distances) <= tolerance:
+                accepted.append(end)
+                continue
+            midpoint_positions = samples[1]
+        if depth >= _MAX_CURVE_DEPTH:
+            raise ValueError(
+                "Straight refinement did not meet curve_tolerance within "
+                f"{_MAX_CURVE_DEPTH} subdivisions; increase curve_tolerance"
+            )
+        if not start_angle < midpoint < end_angle:
+            raise ValueError("Straight refinement exceeds angular precision")
+        # Accepted points contain one start plus one endpoint per interval.
+        if len(accepted) - 1 + len(pending) + 2 > maximum_intervals:
+            raise ValueError(
+                "Straight geometry exceeds the 1,000,000-vertex limit; "
+                "increase curve_tolerance or reduce the number of turns"
+            )
+        if midpoint_positions is None:
+            midpoint_positions = _boundary_sample(
+                midpoint, width, backbone_width, r0, space, rotation
+            ).positions
+        pending.append((midpoint, end_angle, midpoint_positions, end, depth + 1))
+        pending.append((start_angle, midpoint, start, midpoint_positions, depth + 1))
+    samples = np.asarray(accepted)
+    vertices = np.concatenate((samples[:, 0], samples[::-1, 1], samples[:1, 0]))
+    return _SegmentPolygon(vertices, original.label)
 
 
 def _boundary_curve_error(controls, samples):
@@ -983,10 +960,12 @@ def _build_polygons(
     paths, inputs, colors, label_padding, curved_boundaries, tolerance,
     backbone_width, r0, space, rotation, curved_labels=False,
 ):
-    """Build straight or curved shapes, sharing one curved-vertex budget."""
+    """Build refined straight or curved shapes, sharing one vertex budget."""
     polygons = []
     used_vertices = 0
+    remaining_vertices = sum(2 * len(path.positions) + 1 for path in paths)
     for segment_index, path in enumerate(paths):
+        remaining_vertices -= 2 * len(path.positions) + 1
         arguments = (
             path, inputs.widths[segment_index], inputs.labels[segment_index],
             colors.labels[segment_index], inputs.font_sizes[segment_index],
@@ -1000,9 +979,12 @@ def _build_polygons(
                     *arguments, backbone_width, r0, space, rotation, tolerance,
                     _MAX_CURVE_VERTICES - used_vertices - reserved,
                 )
-                used_vertices += len(polygon.vertices)
             else:
-                polygon = _build_polygon(*arguments)
+                polygon = _build_straight_polygon(
+                    *arguments, backbone_width, r0, space, rotation, tolerance,
+                    _MAX_CURVE_VERTICES - used_vertices - remaining_vertices,
+                )
+            used_vertices += len(polygon.vertices)
         except ValueError as error:
             raise ValueError(
                 f"Invalid boundary for segment {segment_index + 1}: {error}"
@@ -1847,7 +1829,6 @@ def draw_spiral_strip(
     number_of_segments=0,
     width=20,
     segment_length=40,
-    maximum_length_of_subsegment=10,
     segment_color='random',
     values=None,
     colormap_name='coolwarm',
@@ -1859,9 +1840,8 @@ def draw_spiral_strip(
     labels1_pad=3,
     antialiased=True,
     gap_between_consecutive_segments=0,
-    accurate_lengths=False,
     show=True,
-    curved_boundaries=False,
+    curved_boundaries=True,
     curve_tolerance=0.01,
     title=None,
     title_fontsize=12,
@@ -1905,12 +1885,6 @@ def draw_spiral_strip(
         Positive perpendicular widths. Their maximum sets the common spiral.
     segment_length : float or one-dimensional sequence, default 40
         Positive requested centerline arc lengths, in plot coordinates.
-    maximum_length_of_subsegment : float, default 10
-        Positive nominal sampling step limit. Smaller steps improve boundary
-        smoothness for straight edges and the legacy length approximation.
-        Step counts are even and at least two per segment. With both accurate
-        lengths and curved boundaries enabled, adaptive refinement replaces
-        these fixed steps; this argument remains validated but is not used.
     segment_color : color or sequence of colors, default "random"
         Fill colors; also accepts "random" or "by_values_and_colormap".
     values : one-dimensional sequence or None, default None
@@ -1945,11 +1919,6 @@ def draw_spiral_strip(
     gap_between_consecutive_segments : float or sequence, default 0
         Nonnegative centerline distances omitted after each segment. The
         final gap has no visible effect.
-    accurate_lengths : bool, default False
-        False uses first-order angular stepping. True solves arc lengths
-        with safeguarded Newton iterations, targeting relative error 1e-10
-        subject to floating-point precision. This includes samples, label
-        midpoints, and gaps; boundary shapes remain rendering approximations.
     show : bool, default True
         Display using Matplotlib after any requested save. With a GUI backend,
         wait until the plot windows are closed. With an inline backend, show
@@ -1957,18 +1926,17 @@ def draw_spiral_strip(
         The display is cropped to the shapes, outlines, complete labels, and title,
         with a two-point margin, preserving equal scaling and font sizes.
         At least one of a filename or show=True must be selected.
-    curved_boundaries : bool, default False
-        False joins sampled boundary points with straight lines. True uses
+    curved_boundaries : bool, default True
+        False adaptively subdivides straight edges using curve_tolerance. True uses
         adaptive cubic Bezier curves matching exact boundary positions and
         angular derivatives, with straight end caps. Endpoint and midpoint
-        placement still follows accurate_lengths. No extra dependency is needed.
+        placement uses the analytic arc-length inverse in both modes. No extra dependency is needed.
     curve_tolerance : float, default 0.01
-        Positive boundary error tolerance in plot coordinates. In curved mode,
+        Positive boundary error tolerance in plot coordinates. In both modes,
         each interval is checked at three interior angles on both boundaries
         and subdivided when the estimated error exceeds this tolerance.
         Angular spans are also limited to pi/4. The estimate is not a rigorous
-        global error bound. Smaller tolerances generally require more curves.
-        Ignored when curved_boundaries=False, but must still be positive/finite.
+        global error bound. Smaller tolerances require more edges or curves.
     title : str or None, default None
         Optional plain-text title centered above the complete graphic and its
         segment labels. None or blank text omits the title. Newlines are allowed.
@@ -2075,7 +2043,6 @@ def draw_spiral_strip(
             number_of_segments=number_of_segments,
             width=width,
             segment_length=segment_length,
-            maximum_length_of_subsegment=maximum_length_of_subsegment,
             segment_color=segment_color,
             values=values,
             colormap_name=colormap_name,
@@ -2087,7 +2054,6 @@ def draw_spiral_strip(
             labels1_pad=labels1_pad,
             antialiased=antialiased,
             gap_between_consecutive_segments=gap_between_consecutive_segments,
-            accurate_lengths=accurate_lengths,
             curved_boundaries=curved_boundaries,
             curve_tolerance=curve_tolerance,
             title=title,
@@ -2128,7 +2094,6 @@ def plot_spiral_strip(
     number_of_segments=0,
     width=20,
     segment_length=40,
-    maximum_length_of_subsegment=10,
     segment_color='random',
     values=None,
     colormap_name='coolwarm',
@@ -2140,8 +2105,7 @@ def plot_spiral_strip(
     labels1_pad=3,
     antialiased=True,
     gap_between_consecutive_segments=0,
-    accurate_lengths=False,
-    curved_boundaries=False,
+    curved_boundaries=True,
     curve_tolerance=0.01,
     title=None,
     title_fontsize=12,
@@ -2184,7 +2148,6 @@ def plot_spiral_strip(
     if len(ax.get_shared_x_axes().get_siblings(ax)) > 1 or len(ax.get_shared_y_axes().get_siblings(ax)) > 1:
         raise ValueError("ax must not share x or y limits with other axes")
     fit = _boolean(fit, "fit")
-    accurate_lengths = _boolean(accurate_lengths, "accurate_lengths")
     antialiased = _boolean(antialiased, "antialiased")
     curved_labels = _boolean(curved_labels, "curved_labels")
     curved_boundaries = _boolean(curved_boundaries, "curved_boundaries")
@@ -2237,6 +2200,8 @@ def plot_spiral_strip(
     count = int(number_of_segments)
     if curved_boundaries and count > _MAX_CURVE_VERTICES // 15:
         raise ValueError("Curved geometry exceeds the 1,000,000-vertex limit")
+    if not curved_boundaries and count > _MAX_CURVE_VERTICES // 7:
+        raise ValueError("Straight geometry exceeds the 1,000,000-vertex limit")
 
     inputs = _prepare_segment_inputs(
         count, width, segment_length, labels1_fontsize,
@@ -2247,11 +2212,6 @@ def plot_spiral_strip(
             raise ValueError("Experimental curved labels are limited to 20,000 characters in total")
         for text in inputs.labels:
             _validate_curved_label_text(text)
-    maximum_step_length = _numeric_scalar(
-        maximum_length_of_subsegment,
-        "maximum_length_of_subsegment",
-        positive=True,
-    )
     r0 = _numeric_scalar(r0, "r0", nonnegative=True)
     space = _numeric_scalar(space, "space", nonnegative=True)
     fi0_deg = _numeric_scalar(fi0_deg, "fi0_deg")
@@ -2269,12 +2229,6 @@ def plot_spiral_strip(
     _validate_raster_dimensions(canvas_figure.get_size_inches(), figure_dpi, "Figure canvas")
     backbone_width = _validate_backbone(inputs.widths, r0, space)
 
-    if curved_boundaries and accurate_lengths:
-        # Only anchors are required: exact start, arc-length midpoint, and end.
-        step_counts = [2] * count
-    else:
-        # Retain the original integration density and placements in legacy mode.
-        step_counts = _substep_counts(inputs.lengths, maximum_step_length)
     colors = _prepare_colors(
         count, segment_color, labels1_color, segment_edge_linecolor,
         inputs.values, colormap_name,
@@ -2284,8 +2238,7 @@ def plot_spiral_strip(
     # do not overflow during multiplication by pi.
     rotation = np.remainder(fi0_deg, 360) * np.pi / 180
     paths, maximum_radius = _build_paths(
-        inputs, step_counts, backbone_width, r0, space, rotation,
-        accurate_lengths, curved_boundaries, curved_labels=curved_labels,
+        inputs, backbone_width, r0, space, rotation,
     )
     polygons = _build_polygons(
         paths, inputs, colors, labels1_pad, curved_boundaries, curve_tolerance,
