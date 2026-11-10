@@ -10,9 +10,23 @@ The package includes Python code for drawing Spiral Strip graphics. The graphic 
 
 An interactive browser version, Spiral Strip Web Studio, is available at [spiralstrip.si](https://spiralstrip.si/).
 
-## Usage
+## Installation
 
-Download `spiralstrip.py` from the [Spiral-strip GitHub repository](https://github.com/skokg/Spiral-strip), then place it beside your script or in a directory on Python's import path.
+Install with pip:
+
+```bash
+pip install spiralstrip
+```
+
+Or install with conda from conda-forge:
+
+```bash
+conda install -c conda-forge spiralstrip
+```
+
+Alternatively, download `spiralstrip.py` from the [Spiral-strip GitHub repository](https://github.com/skokg/Spiral-strip), then place it beside your script or in a directory on Python's import path.
+
+## Usage
 
 Use `draw_spiral_strip` to create a separate graphic, display it, and optionally save it to a file:
 
