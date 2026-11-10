@@ -17,6 +17,7 @@ build:
   script: python -m pip install . --no-deps --no-build-isolation -vv
 
 requirements:
+  # conda-forge supplies python_min globally; standalone builds pass it as a variant.
   host:
     - python ${{ python_min }}.*
     - pip
