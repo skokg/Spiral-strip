@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spiralstrip"
+version = "2.0.4"
+description = "Draw data as colored segments arranged along a spiral using Matplotlib."
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [{name = "Gregor Skok", email = "Gregor.Skok@fmf.uni-lj.si"}]
+dependencies = ["numpy>=1.23.5", "matplotlib>=3.8"]
+keywords = ["spiral", "visualization", "matplotlib", "scientific visualization"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+[project.urls]
+Repository = "https://github.com/skokg/Spiral-strip"
+Issues = "https://github.com/skokg/Spiral-strip/issues"
+Paper = "https://doi.org/10.3390/app12136609"
+
+[tool.setuptools]
+py-modules = ["spiralstrip"]
+packages = ["spiralstrip_examples"]
+include-package-data = false

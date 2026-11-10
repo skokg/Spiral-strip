@@ -119,13 +119,15 @@ The code requires NumPy and Matplotlib.
 
 ## Examples
 
+The example scripts are in the `spiralstrip_examples` folder.
+
 The examples are based on the open-access paper listed in the References section. Please refer to the paper for a detailed description and discussion of the examples. The current example scripts also include titles and other options added to the library since publication.
 
-- **Examples 1–4** (source code in [example_01_to_04.py](https://github.com/skokg/Spiral-strip/blob/v2.0/example_01_to_04.py)) show average yearly 2-m temperatures in Ljubljana, Slovenia, during 1917–2017. Colder years appear in bluish colors and warmer years in reddish colors. Time increases toward the center of the spiral. The file includes separate graphics using `draw_spiral_strip` and `plot_spiral_strip`, plus a combined 2×2 Matplotlib figure using `plot_spiral_strip`.
+- **Examples 1–4** (source code in [example_01_to_04.py](spiralstrip_examples/example_01_to_04.py)) show average yearly 2-m temperatures in Ljubljana, Slovenia, during 1917–2017. Colder years appear in bluish colors and warmer years in reddish colors. Time increases toward the center of the spiral. The file includes separate graphics using `draw_spiral_strip` and `plot_spiral_strip`, plus a combined 2×2 Matplotlib figure using `plot_spiral_strip`.
 
-- **Example 5** (source code in [example_05.py](https://github.com/skokg/Spiral-strip/blob/v2.0/example_05.py)) shows world population during 1900–2021. Segment colors depend on population size, and widths are proportional to population size. Labels alternate between the year and population size. Years appear in gray; population labels match the segment colors. Population is expressed in billions (for example, 1.7 B means 1.7 billion). This example uses `draw_spiral_strip`.
+- **Example 5** (source code in [example_05.py](spiralstrip_examples/example_05.py)) shows world population during 1900–2021. Segment colors depend on population size, and widths are proportional to population size. Labels alternate between the year and population size. Years appear in gray; population labels match the segment colors. Population is expressed in billions (for example, 1.7 B means 1.7 billion). This example uses `draw_spiral_strip`.
 
-- **Example 6** (source code in [example_06.py](https://github.com/skokg/Spiral-strip/blob/v2.0/example_06.py)) shows seven historical wars using the estimates in the example dataset. Segment lengths are proportional to duration, and segment areas represent estimated deaths. This example uses `draw_spiral_strip` and displays the segments without labels.
+- **Example 6** (source code in [example_06.py](spiralstrip_examples/example_06.py)) shows seven historical wars using the estimates in the example dataset. Segment lengths are proportional to duration, and segment areas represent estimated deaths. This example uses `draw_spiral_strip` and displays the segments without labels.
 
 ## Author
 
