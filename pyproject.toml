@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "spiralstrip"
 version = "2.0.4"
 description = "Draw data as colored segments arranged along a spiral using Matplotlib."
+readme = "README.md"
 requires-python = ">=3.10"
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
