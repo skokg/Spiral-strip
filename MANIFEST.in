@@ -1,3 +1,5 @@
 include LICENSE
 recursive-include spiralstrip_examples *.py
+recursive-include tests *.py
 prune conda_recipe
+prune .github
