@@ -8,6 +8,8 @@
 
 The package includes Python code for drawing Spiral Strip graphics. The graphic consists of color-coded segments arranged in a spiral. The width and length of each segment can vary to convey additional information. The package includes examples based on climate, population size, and historical data. For a detailed description of the visualization methodology, please refer to the open-access paper listed in the References section.
 
+An interactive browser version, Spiral Strip Web Studio, is available at [spiralstrip.si](https://spiralstrip.si/).
+
 ## Usage
 
 Download `spiralstrip.py` from the [Spiral-strip GitHub repository](https://github.com/skokg/Spiral-strip), then place it beside your script or in a directory on Python's import path.
